@@ -18,8 +18,14 @@ class GreenhouseLoadedState extends GreenhouseState {
   const GreenhouseLoadedState({required this.greenhouse});
 }
 
+class GreenhousesLoadedState extends GreenhouseState {
+  final List<Greenhouse> greenhouses;
+
+  const GreenhousesLoadedState({required this.greenhouses});
+}
+
 class GreenhouseErrorState extends GreenhouseState {
   final String message;
 
   const GreenhouseErrorState({required this.message});
-} 
+}

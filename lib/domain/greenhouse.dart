@@ -12,18 +12,18 @@ class Greenhouse {
     {
       "id": $id,
       "title": "$title",
-      "zones": ${zones.map((zone) => zone.toJson()).toList()}
+      "zones": ${zones.map((zone) => zone.toMap()).toList()}
     }
     ''';
   }
 
-  factory Greenhouse.fromJson(Map<String, dynamic> json) {
+  factory Greenhouse.fromMap(Map<String, dynamic> json) {
     return Greenhouse(
       id: json['id'],
       title: json['title'],
       zones:
           (json['zones'] as List)
-              .map((zone) => CropZone.fromJson(zone))
+              .map((zone) => CropZone.fromMap(zone))
               .toList(),
     );
   }

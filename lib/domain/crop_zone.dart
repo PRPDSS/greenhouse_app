@@ -1,4 +1,3 @@
-import 'package:greenhouse_app/domain/crop.dart';
 import 'package:greenhouse_app/domain/device_controller.dart';
 import 'package:greenhouse_app/domain/pair.dart';
 import 'package:greenhouse_app/domain/sensor_manager.dart';
@@ -6,7 +5,7 @@ import 'package:greenhouse_app/domain/sensor_manager.dart';
 class CropZone {
   final int _id;
   final String title;
-  final Crop? _crop;
+  final int? _cropId;
   double day;
 
   /// Размеры зоны в метрах (ширина, высота).
@@ -21,18 +20,18 @@ class CropZone {
   CropZone({
     required int id,
     required this.title,
-    Crop? crop,
+    int? cropId,
     this.definitions = const Pair(10.0, 10.0),
     this.day = 0,
     SensorManager? sensorManager,
     DeviceController? deviceController,
   }) : _id = id,
-       _crop = crop,
+       _cropId = cropId,
        sensorManager = sensorManager ?? SensorManager(),
        deviceController = deviceController ?? DeviceController();
 
   int get id => _id;
-  Crop? get crop => _crop;
+  int? get cropId => _cropId;
   double get area => definitions.first * definitions.second;
 
   @override
@@ -42,12 +41,15 @@ class CropZone {
             runtimeType == other.runtimeType &&
             _id == other._id &&
             title == other.title &&
-            _crop == other._crop &&
+            _cropId == other._cropId &&
             day == other.day &&
             definitions == other.definitions &&
             sensorManager == other.sensorManager &&
             deviceController == other.deviceController);
   }
+
+  @override
+  int get hashCode => _id.hashCode;
 
   void updateDefinitions(double width, double height) {
     if (width > 0 && height > 0) {
@@ -60,7 +62,7 @@ class CropZone {
   CropZone copyWith({
     int? id,
     String? title,
-    Crop? crop,
+    int? cropId,
     Pair<double>? definitions,
     double? day,
     SensorManager? sensorManager,
@@ -69,7 +71,7 @@ class CropZone {
     return CropZone(
       id: id ?? _id,
       title: title ?? this.title,
-      crop: crop ?? _crop,
+      cropId: cropId ?? _cropId,
       definitions: definitions ?? this.definitions,
       day: day ?? this.day,
       sensorManager: sensorManager ?? this.sensorManager,
@@ -77,31 +79,36 @@ class CropZone {
     );
   }
 
-  String toJson() {
-    return '''
-    {
-      "id": $_id,
-      "title": "$title",
-      "crop": ${_crop?.toJson() ?? 'null'},
-      "sensorManager": ${sensorManager.toJson()},
-      "deviceController": ${deviceController.toJson()}
-    }
-    ''';
+  Map<String, dynamic> toMap() {
+    return {
+      'id': _id,
+      'title': title,
+      'cropId': _cropId,
+      'day': day,
+      'definitions': {
+        'width': definitions.first,
+        'height': definitions.second,
+      },
+      'sensorManager': sensorManager.toJson(),
+      'deviceController': deviceController.toJson(),
+    };
   }
 
-  factory CropZone.fromJson(Map<String, dynamic> json) {
+  factory CropZone.fromMap(Map<String, dynamic> map) {
     return CropZone(
-      id: json['id'] as int,
-      title: json['title'] as String,
-      crop:
-          json['crop'] == null
-              ? null
-              : Crop.fromJson(json['crop'] as Map<String, dynamic>),
+      id: map['id'] as int,
+      title: map['title'] as String,
+      cropId: map['cropId'] as int?,
+      day: map['day'] as double,
+      definitions: Pair(
+        (map['definitions'] as Map<String, dynamic>)['width'] as double,
+        (map['definitions'] as Map<String, dynamic>)['height'] as double,
+      ),
       sensorManager: SensorManager.fromJson(
-        json['sensorManager'] as Map<String, dynamic>,
+        map['sensorManager'] as Map<String, dynamic>,
       ),
       deviceController: DeviceController.fromJson(
-        json['deviceController'] as Map<String, dynamic>,
+        map['deviceController'] as Map<String, dynamic>,
       ),
     );
   }

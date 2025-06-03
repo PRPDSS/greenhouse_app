@@ -7,7 +7,17 @@ abstract class GreenhouseEvent {
 }
 
 class LoadGreenhouseEvent extends GreenhouseEvent {
-  const LoadGreenhouseEvent();
+  final int greenhouseId;
+  const LoadGreenhouseEvent({required this.greenhouseId});
+}
+
+class CreateGreenhouseEvent extends GreenhouseEvent {
+  final String title;
+  const CreateGreenhouseEvent({required this.title});
+}
+
+class LoadGreenhousesEvent extends GreenhouseEvent {
+  const LoadGreenhousesEvent();
 }
 
 class UpdateZoneDefinitionsEvent extends GreenhouseEvent {
