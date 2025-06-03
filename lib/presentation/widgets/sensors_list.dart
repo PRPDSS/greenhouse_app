@@ -129,9 +129,10 @@ class _SensorConfigState extends State<_SensorConfig> {
                     controller: TextEditingController(
                       text: posX.toStringAsFixed(2),
                     ),
-                    onChanged: (v) {
+                    onSubmitted: (v) {
                       final x = double.tryParse(v);
                       if (x != null) setState(() => posX = x);
+                      widget.onSensorUpdated();
                     },
                   ),
                 ),
@@ -145,9 +146,10 @@ class _SensorConfigState extends State<_SensorConfig> {
                     controller: TextEditingController(
                       text: posY.toStringAsFixed(2),
                     ),
-                    onChanged: (v) {
+                    onSubmitted: (v) {
                       final y = double.tryParse(v);
                       if (y != null) setState(() => posY = y);
+                      widget.onSensorUpdated();
                     },
                   ),
                 ),

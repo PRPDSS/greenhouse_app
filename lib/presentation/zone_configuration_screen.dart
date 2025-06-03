@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:greenhouse_app/domain/crop_zone.dart';
+import 'package:greenhouse_app/domain/device_controller.dart';
+import 'package:greenhouse_app/domain/pair.dart';
+import 'package:greenhouse_app/domain/sensor_manager.dart';
+import 'package:greenhouse_app/presentation/bloc/greenhouse_bloc.dart';
+import 'package:greenhouse_app/presentation/bloc/greenhouse_event.dart';
+import 'package:greenhouse_app/presentation/bloc/greenhouse_state.dart';
 import 'package:greenhouse_app/presentation/widgets/devices_list.dart';
 import 'package:greenhouse_app/presentation/widgets/sensors_list.dart';
-import 'package:greenhouse_app/presentation/bloc/zones_bloc.dart';
-import 'package:greenhouse_app/presentation/bloc/zones_event.dart';
-import 'package:greenhouse_app/presentation/bloc/zones_state.dart';
 import 'package:greenhouse_app/presentation/widgets/zone_markers_legend.dart';
 import 'package:greenhouse_app/presentation/widgets/zone_scheme.dart';
 import 'package:greenhouse_app/presentation/widgets/zone_size_selector.dart';
 
-class ZoneConfigurationScreen extends StatelessWidget {
-  final int zoneId;
-  final ZonesBloc bloc;
+class ZoneConfigurationScreen extends StatefulWidget {
+  final int? zoneId;
+  final GreenhouseBloc bloc;
   const ZoneConfigurationScreen({
     required this.zoneId,
     required this.bloc,
@@ -19,23 +23,55 @@ class ZoneConfigurationScreen extends StatelessWidget {
   });
 
   @override
+  State<ZoneConfigurationScreen> createState() =>
+      _ZoneConfigurationScreenState();
+}
+
+class _ZoneConfigurationScreenState extends State<ZoneConfigurationScreen> {
+  late CropZone? zoneDraft;
+
+  @override
+  void initState() {
+    super.initState();
+    zoneDraft = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ZonesBloc, ZonesState>(
-      bloc: bloc,
+    return BlocBuilder<GreenhouseBloc, GreenhouseState>(
+      bloc: widget.bloc,
       builder: (context, state) {
-        if (state is! ZonesLoadedState) {
+        if (state is! GreenhouseLoadedState) {
           return Scaffold(
-            appBar: AppBar(title: Text('Zone Settings')),
+            appBar: AppBar(title: Text('Zone Configuration')),
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        final zone = state.zones.firstWhere(
-          (zone) => zone.id == zoneId,
-          orElse: () => throw Exception('Zone not found'),
-        );
+
+        CropZone? zone;
+        if (widget.zoneId != null) {
+          zone = state.greenhouse.zones.firstWhere(
+            (z) => z.id == widget.zoneId,
+            orElse: () => throw Exception('Zone not found'),
+          );
+        }
+
+        // Если zoneId == null, создаём временную зону для конфигурации
+        zoneDraft ??=
+            zone ??
+            CropZone(
+              id: -1,
+              title: 'New Zone',
+              crop: state.greenhouse.zones.isNotEmpty ? state.greenhouse.zones.first.crop : null,
+              day: 30,
+              definitions: Pair(10.0, 10.0),
+              sensorManager: SensorManager(sensors: []),
+              deviceController: DeviceController(devices: []),
+            );
+
         return Scaffold(
           appBar: AppBar(
-            title: Text(zone.title),
+            title: Text(zoneDraft!.title),
             actions: [
               IconButton(
                 icon: Icon(Icons.more_vert),
@@ -48,48 +84,76 @@ class ZoneConfigurationScreen extends StatelessWidget {
                   );
                 },
               ),
+              if (widget.zoneId == null)
+                IconButton(
+                  icon: Icon(Icons.check),
+                  tooltip: 'Сохранить',
+                  onPressed: () {
+                    // TODO: добавить событие создания новой зоны
+                    // Например:
+                    // widget.bloc.add(AddZoneEvent(...));
+                    Navigator.of(context).pop();
+                  },
+                ),
             ],
           ),
-          body: BlocBuilder<ZonesBloc, ZonesState>(
-            bloc: bloc,
-            builder: (context, state) {
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  ZoneScheme(
-                    sensorManager: zone.sensorManager,
-                    deviceController: zone.deviceController,
-                    definitions: zone.definitions,
-                  ),
-                  SizedBox(height: 16),
-                  ZoneSizeSelector(
-                    definitions: zone.definitions,
-                    onWidthChanged: (value) {
-                      final width = double.tryParse(value) ?? 10;
-                      bloc.add(
-                        UpdateZoneDefinitionsEvent(
-                          zoneId: zone.id,
-                          width: width,
-                          height: zone.definitions.second,
-                        ),
-                      );
-                    },
-                    onHeightChanged: (value) {
-                      final height = double.tryParse(value) ?? 10;
-                      bloc.add(
-                        UpdateZoneDefinitionsEvent(
-                          zoneId: zone.id,
-                          width: zone.definitions.first,
-                          height: height,
-                        ),
-                      );
-                    },
-                  ),
-                  SensorsList(sensors: zone.sensorManager.sensors),
-                  DevicesList(devices: zone.deviceController.devices),
-                ],
-              );
-            },
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              ZoneScheme(
+                sensorManager: zoneDraft!.sensorManager,
+                deviceController: zoneDraft!.deviceController,
+                definitions: zoneDraft!.definitions,
+              ),
+              SizedBox(height: 16),
+              ZoneSizeSelector(
+                definitions: zoneDraft!.definitions,
+                onWidthChanged: (value) {
+                  final width = double.tryParse(value) ?? 10;
+                  setState(() {
+                    zoneDraft = zoneDraft!.copyWith(
+                      definitions: Pair(width, zoneDraft!.definitions.second),
+                    );
+                  });
+                  if (widget.zoneId != null) {
+                    widget.bloc.add(
+                      UpdateZoneDefinitionsEvent(
+                        zoneId: zoneDraft!.id,
+                        width: width,
+                        height: zoneDraft!.definitions.second,
+                      ),
+                    );
+                  }
+                },
+                onHeightChanged: (value) {
+                  final height = double.tryParse(value) ?? 10;
+                  setState(() {
+                    zoneDraft = zoneDraft!.copyWith(
+                      definitions: Pair(zoneDraft!.definitions.first, height),
+                    );
+                  });
+                  if (widget.zoneId != null) {
+                    widget.bloc.add(
+                      UpdateZoneDefinitionsEvent(
+                        zoneId: zoneDraft!.id,
+                        width: zoneDraft!.definitions.first,
+                        height: height,
+                      ),
+                    );
+                  }
+                },
+              ),
+              SensorsList(
+                sensors: zoneDraft!.sensorManager.sensors,
+                onSensorUpdated: () {
+                  if (widget.zoneId != null) {
+                    widget.bloc.add(UpdateZoneEvent());
+                  }
+                  setState(() {});
+                },
+              ),
+              DevicesList(devices: zoneDraft!.deviceController.devices),
+            ],
           ),
         );
       },

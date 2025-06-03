@@ -22,7 +22,7 @@ class ZoneCard extends StatelessWidget {
             children: [
               Text(zone.title),
               const SizedBox(height: 8),
-              Text('Crops: ${zone.crop.title}'),
+              Text('Crops: ${zone.crop?.title ?? 'None'}'),
               const SizedBox(height: 8),
               Text('Area: ${zone.area} m²'),
               const SizedBox(height: 8),

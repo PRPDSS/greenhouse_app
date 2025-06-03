@@ -2,13 +2,20 @@ import 'package:greenhouse_app/domain/crop.dart';
 import 'package:greenhouse_app/domain/crop_zone.dart';
 import 'package:greenhouse_app/domain/device.dart';
 import 'package:greenhouse_app/domain/device_controller.dart';
+import 'package:greenhouse_app/domain/greenhouse.dart';
 import 'package:greenhouse_app/domain/pair.dart';
 import 'package:greenhouse_app/domain/sensor.dart';
 import 'package:greenhouse_app/domain/sensor_manager.dart';
 
 class ExampleData {
+  static Greenhouse greenhouse = Greenhouse(
+    id: 1,
+    title: 'Example Greenhouse',
+    zones: cropZones,
+  );
+
   static List<CropZone> cropZones = List.generate(
-    10,
+    2,
     (index) => CropZone(
       id: index,
       title: 'Zone ${index + 1}',

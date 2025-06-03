@@ -52,7 +52,7 @@ class ZoneScheme extends StatelessWidget {
                 height: markerSize,
                 width: markerSize,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(markerSize / 2),
                   color: Sensor.sensorTypeToColor(sensor.type),
                 ),
                 child: Text('${sensor.id}', textAlign: TextAlign.center),
