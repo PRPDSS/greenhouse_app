@@ -12,16 +12,14 @@ class GreenhouseLoadingState extends GreenhouseState {
   const GreenhouseLoadingState();
 }
 
-class GreenhouseLoadedState extends GreenhouseState {
-  final Greenhouse greenhouse;
-
-  const GreenhouseLoadedState({required this.greenhouse});
-}
-
 class GreenhousesLoadedState extends GreenhouseState {
   final List<Greenhouse> greenhouses;
+  final int? selectedGreenhouseId;
 
-  const GreenhousesLoadedState({required this.greenhouses});
+  const GreenhousesLoadedState({
+    required this.greenhouses,
+    this.selectedGreenhouseId,
+  });
 }
 
 class GreenhouseErrorState extends GreenhouseState {

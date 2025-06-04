@@ -8,16 +8,10 @@ import 'package:greenhouse_app/presentation/bloc/greenhouse_state.dart';
 class GreenhouseBloc extends Bloc<GreenhouseEvent, GreenhouseState> {
   late GreenhouseRepository _repository;
 
-  GreenhouseBloc()
-      :
-        super(const GreenhouseInitialState()) {
+  GreenhouseBloc() : super(const GreenhouseInitialState()) {
     on<LoadGreenhousesEvent>(_onLoadGreenhousesEvent);
-    on<LoadGreenhouseEvent>(_onLoadGreenhouseEvent);
     on<CreateGreenhouseEvent>(_onCreateGreenhouseEvent);
-    on<UpdateZoneDefinitionsEvent>(_onUpdateZoneDefinitionsEvent);
     on<UpdateZoneEvent>(_onUpdateZoneEvent);
-    on<UpdateSensorEvent>(_onUpdateSensorEvent);
-    on<UpdateDeviceEvent>(_onUpdateDeviceEvent);
   }
 
   FutureOr<void> _onLoadGreenhousesEvent(
@@ -41,96 +35,59 @@ class GreenhouseBloc extends Bloc<GreenhouseEvent, GreenhouseState> {
   ) async {
     emit(const GreenhouseLoadingState());
     try {
+      final greenhouses = await _repository.loadGreenhouses();
+      if (greenhouses.any((g) => g.title == event.title)) {
+        print('Greenhouse ${event.title} already exist');
+        return;
+      }
       final greenhouse = await _repository.createGreenhouse(event.title);
-      emit(GreenhouseLoadedState(greenhouse: greenhouse));
+      greenhouses.add(greenhouse);
+      emit(
+        GreenhousesLoadedState(
+          greenhouses: greenhouses,
+          selectedGreenhouseId: greenhouse.id,
+        ),
+      );
     } catch (e) {
       emit(GreenhouseErrorState(message: e.toString()));
     }
   }
 
-  FutureOr<void> _onLoadGreenhouseEvent(
-    LoadGreenhouseEvent event,
-    Emitter<GreenhouseState> emit,
-  ) async {
-    emit(const GreenhouseLoadingState());
-    try {
-      final greenhouse = await _repository.loadGreenhouse(event.greenhouseId);
-      if (greenhouse != null) {
-        emit(GreenhouseLoadedState(greenhouse: greenhouse));
-      } else {
-        emit(const GreenhouseErrorState(message: 'Greenhouse not found'));
-      }
-    } catch (e) {
-      emit(GreenhouseErrorState(message: e.toString()));
-    }
-  }
-
-  FutureOr<void> _onUpdateZoneDefinitionsEvent(
-    UpdateZoneDefinitionsEvent event,
-    Emitter<GreenhouseState> emit,
-  ) async {
-    try {
-      if (event.height > 0 && event.width > 0) {
-        final currentState = state as GreenhouseLoadedState;
-        final greenhouse = currentState.greenhouse;
-        final zone = greenhouse.zones.firstWhere((z) => z.id == event.zoneId);
-        zone.updateDefinitions(event.width, event.height);
-        await _repository.saveGreenhouse(greenhouse);
-        emit(GreenhouseLoadedState(greenhouse: greenhouse));
-      }
-    } catch (e) {
-      emit(GreenhouseErrorState(message: e.toString()));
-    }
-  }
 
   FutureOr<void> _onUpdateZoneEvent(
     UpdateZoneEvent event,
     Emitter<GreenhouseState> emit,
   ) async {
     try {
-      if (state is GreenhouseLoadedState) {
-        final greenhouse = (state as GreenhouseLoadedState).greenhouse;
-        await _repository.saveGreenhouse(greenhouse);
-        emit(GreenhouseLoadedState(greenhouse: greenhouse));
+      if (state is GreenhousesLoadedState) {
+        final currentState = state as GreenhousesLoadedState;
+        final greenhouse = currentState.greenhouses.firstWhere(
+          (g) => g.id == event.greenhouseId,
+          orElse: () => throw Exception('Greenhouse not found'),
+        );
+
+        final updatedZones = greenhouse.zones.map((zone) {
+          if (zone.id == event.zoneId) {
+            return event.zone; // Update the zone
+          }
+          return zone; // Keep the existing zone
+        }).toList();
+
+        final updatedGreenhouse = greenhouse.copyWith(zones: updatedZones);
+        await _repository.saveGreenhouse(updatedGreenhouse);
+
+        emit(GreenhousesLoadedState(
+          greenhouses: currentState.greenhouses.map((g) {
+            if (g.id == event.greenhouseId) {
+              return updatedGreenhouse;
+            }
+            return g;
+          }).toList(),
+          selectedGreenhouseId: currentState.selectedGreenhouseId,
+        ));
+      } else {
+        emit(GreenhouseErrorState(message: 'No greenhouses loaded'));
       }
-    } catch (e) {
-      emit(GreenhouseErrorState(message: e.toString()));
-    }
-  }
-
-  FutureOr<void> _onUpdateSensorEvent(
-    UpdateSensorEvent event,
-    Emitter<GreenhouseState> emit,
-  ) async {
-    try {
-      final greenhouse = (state as GreenhouseLoadedState).greenhouse;
-      final zone = greenhouse.zones.firstWhere((z) => z.id == event.zoneId);
-      final sensor = zone.sensorManager.sensors.firstWhere(
-        (s) => s.id == event.sensorId,
-      );
-      sensor.type = event.type;
-      sensor.position = event.position;
-      await _repository.saveGreenhouse(greenhouse);
-      emit(GreenhouseLoadedState(greenhouse: greenhouse));
-    } catch (e) {
-      emit(GreenhouseErrorState(message: e.toString()));
-    }
-  }
-
-  FutureOr<void> _onUpdateDeviceEvent(
-    UpdateDeviceEvent event,
-    Emitter<GreenhouseState> emit,
-  ) async {
-    try {
-      final greenhouse = (state as GreenhouseLoadedState).greenhouse;
-      final zone = greenhouse.zones.firstWhere((z) => z.id == event.zoneId);
-      final device = zone.deviceController.devices.firstWhere(
-        (d) => d.id == event.deviceId,
-      );
-      device.type = event.type;
-      device.position = event.position;
-      await _repository.saveGreenhouse(greenhouse);
-      emit(GreenhouseLoadedState(greenhouse: greenhouse));
     } catch (e) {
       emit(GreenhouseErrorState(message: e.toString()));
     }

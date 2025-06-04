@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:greenhouse_app/domain/device_controller.dart';
 import 'package:greenhouse_app/domain/pair.dart';
 import 'package:greenhouse_app/domain/sensor_manager.dart';
@@ -89,8 +90,8 @@ class CropZone {
         'width': definitions.first,
         'height': definitions.second,
       },
-      'sensorManager': sensorManager.toJson(),
-      'deviceController': deviceController.toJson(),
+      'sensorManager': jsonDecode(sensorManager.toJson()),
+      'deviceController': jsonDecode(deviceController.toJson()),
     };
   }
 
@@ -99,7 +100,7 @@ class CropZone {
       id: map['id'] as int,
       title: map['title'] as String,
       cropId: map['cropId'] as int?,
-      day: map['day'] as double,
+      day: (map['day'] as num).toDouble(),
       definitions: Pair(
         (map['definitions'] as Map<String, dynamic>)['width'] as double,
         (map['definitions'] as Map<String, dynamic>)['height'] as double,

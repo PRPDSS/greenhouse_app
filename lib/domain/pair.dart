@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// Пара (связка) двух значений одного типа.
 class Pair<T> {
   /// Первое значение.
@@ -10,9 +12,25 @@ class Pair<T> {
   const Pair(this.first, this.second);
 
   factory Pair.fromJson(Map<String, dynamic> json) {
+    if (T == double) {
+      return Pair<T>(
+        (json['first'] as num).toDouble() as T,
+        (json['second'] as num).toDouble() as T,
+      );
+    }
     return Pair<T>(json['first'] as T, json['second'] as T);
   }
-  Map<String, dynamic> toJson() {
-    return {'first': first, 'second': second};
+
+  String toJson() {
+    return jsonEncode({'first': first, 'second': second});
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Pair<T> && other.first == first && other.second == second;
+  }
+
+  @override
+  int get hashCode => first.hashCode ^ second.hashCode;
 }

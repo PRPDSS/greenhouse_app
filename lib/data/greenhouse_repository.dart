@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:greenhouse_app/domain/crop_zone.dart';
 import 'package:greenhouse_app/domain/greenhouse.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,11 +11,17 @@ class GreenhouseRepository {
     final List<Map<String, dynamic>> maps = await _db.query('greenhouse');
     return maps.map((map) {
       final String zonesJson = map['zonesJson'] as String;
-      final List<CropZone> zones =
-          zonesJson
-              .split(',')
-              .map((z) => CropZone.fromMap(jsonDecode(z)))
-              .toList();
+      if (zonesJson.isEmpty) {
+        return Greenhouse(
+          id: map['id'] as int,
+          title: map['title'] as String,
+          zones: [],
+        );
+      }
+
+      final List<CropZone> zones = (jsonDecode(zonesJson) as List)
+          .map((z) => CropZone.fromMap(z as Map<String, dynamic>))
+          .toList();
 
       return Greenhouse(
         id: map['id'] as int,
@@ -37,7 +42,7 @@ class GreenhouseRepository {
   }
 
   Future<void> saveGreenhouse(Greenhouse greenhouse) async {
-    final String zonesJson = greenhouse.zones.map((z) => z.toMap()).join(',');
+    final zonesJson = jsonEncode(greenhouse.zones.map((z) => z.toMap()).toList());
     await _db.insert('greenhouse', {
       'id': greenhouse.id,
       'title': greenhouse.title,
@@ -56,11 +61,17 @@ class GreenhouseRepository {
 
     final Map<String, dynamic> map = maps.first;
     final String zonesJson = map['zonesJson'] as String;
-    final List<CropZone> zones =
-        zonesJson
-            .split(',')
-            .map((z) => CropZone.fromMap(jsonDecode(z)))
-            .toList();
+    if (zonesJson.isEmpty) {
+      return Greenhouse(
+        id: map['id'] as int,
+        title: map['title'] as String,
+        zones: [],
+      );
+    }
+
+    final List<CropZone> zones = (jsonDecode(zonesJson) as List)
+        .map((z) => CropZone.fromMap(z as Map<String, dynamic>))
+        .toList();
 
     return Greenhouse(
       id: map['id'] as int,

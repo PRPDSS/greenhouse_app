@@ -1,14 +1,7 @@
-import 'package:greenhouse_app/domain/device.dart';
-import 'package:greenhouse_app/domain/pair.dart';
-import 'package:greenhouse_app/domain/sensor.dart';
+import 'package:greenhouse_app/domain/crop_zone.dart';
 
 abstract class GreenhouseEvent {
   const GreenhouseEvent();
-}
-
-class LoadGreenhouseEvent extends GreenhouseEvent {
-  final int greenhouseId;
-  const LoadGreenhouseEvent({required this.greenhouseId});
 }
 
 class CreateGreenhouseEvent extends GreenhouseEvent {
@@ -20,46 +13,21 @@ class LoadGreenhousesEvent extends GreenhouseEvent {
   const LoadGreenhousesEvent();
 }
 
-class UpdateZoneDefinitionsEvent extends GreenhouseEvent {
-  final int zoneId;
-  final double width;
-  final double height;
+class AddZoneEvent extends GreenhouseEvent {
+  final int greenhouseId;
+  final CropZone zone;
 
-  const UpdateZoneDefinitionsEvent({
-    required this.zoneId,
-    required this.width,
-    required this.height,
-  });
+  const AddZoneEvent({required this.greenhouseId, required this.zone});
 }
 
 class UpdateZoneEvent extends GreenhouseEvent {
-  const UpdateZoneEvent();
-}
-
-class UpdateSensorEvent extends GreenhouseEvent {
+  final int greenhouseId;
   final int zoneId;
-  final int sensorId;
-  final SensorType type;
-  final Pair<double> position;
+  final CropZone zone;
 
-  const UpdateSensorEvent({
+  const UpdateZoneEvent({
+    required this.greenhouseId,
     required this.zoneId,
-    required this.sensorId,
-    required this.type,
-    required this.position,
+    required this.zone,
   });
 }
-
-class UpdateDeviceEvent extends GreenhouseEvent {
-  final int zoneId;
-  final int deviceId;
-  final DeviceType type;
-  final Pair<double> position;
-
-  const UpdateDeviceEvent({
-    required this.zoneId,
-    required this.deviceId,
-    required this.type,
-    required this.position,
-  });
-} 

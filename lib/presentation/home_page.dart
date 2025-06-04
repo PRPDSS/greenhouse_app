@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greenhouse_app/presentation/crops_screen.dart';
+import 'package:greenhouse_app/presentation/greenhouses_screen.dart';
 import 'package:greenhouse_app/presentation/settings_screen.dart';
-import 'package:greenhouse_app/presentation/zones_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,7 +12,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentPageIndex = 0;
-  final List<Widget> pages = [ZonesScreen(), CropsScreen(), SettingsScreen()];
+  final List<Widget> pages = [GreenhousesScreen(), CropsScreen(), SettingsScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage> {
         return Scaffold(
           bottomNavigationBar: NavigationBar(
             destinations: [
-              NavigationDestination(icon: Icon(Icons.inbox), label: 'zones'),
+              NavigationDestination(icon: Icon(Icons.inbox), label: 'greenhouses'),
               NavigationDestination(
                 icon: Icon(Icons.align_vertical_bottom),
                 label: 'crops',

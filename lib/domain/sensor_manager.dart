@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:greenhouse_app/domain/sensor.dart';
 
 class SensorManager {
@@ -7,15 +8,14 @@ class SensorManager {
   List<Sensor> get sensors => _sensors;
 
   String toJson() {
-    return '''
-    {
-      "sensors": ${_sensors.map((sensor) => sensor.toJson()).toList()}
-    }
-    ''';
+    return jsonEncode({
+      'sensors': _sensors.map((sensor) => jsonDecode(sensor.toJson())).toList(),
+    });
   }
+
   factory SensorManager.fromJson(Map<String, dynamic> json) {
     return SensorManager(
-      sensors: (json['sensors'] as List<dynamic>)
+      sensors: (json['sensors'] as List)
           .map((sensorJson) => Sensor.fromJson(sensorJson as Map<String, dynamic>))
           .toList(),
     );

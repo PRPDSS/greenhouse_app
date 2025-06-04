@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:greenhouse_app/domain/greenhouse.dart';
+import 'package:greenhouse_app/domain/crop_zone.dart';
 import 'package:greenhouse_app/presentation/bloc/greenhouse_bloc.dart';
 import 'package:greenhouse_app/presentation/bloc/greenhouse_event.dart';
 import 'package:greenhouse_app/presentation/bloc/greenhouse_state.dart';
@@ -8,7 +8,8 @@ import 'package:greenhouse_app/presentation/widgets/zone_card.dart';
 import 'package:greenhouse_app/presentation/zone_configuration_screen.dart';
 
 class ZonesScreen extends StatelessWidget {
-  const ZonesScreen({super.key});
+  final int greenhouseId;
+  const ZonesScreen({super.key, required this.greenhouseId});
 
   @override
   Widget build(BuildContext context) {
@@ -20,49 +21,50 @@ class ZonesScreen extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Greenhouse'),
             actions: [
-              if (state is GreenhouseLoadedState)
+              if (state is GreenhousesLoadedState)
                 IconButton(
                   icon: const Icon(Icons.list),
                   onPressed: () {
-                    context.read<GreenhouseBloc>().add(const LoadGreenhousesEvent());
+                    context.read<GreenhouseBloc>().add(
+                      const LoadGreenhousesEvent(),
+                    );
                   },
                 ),
             ],
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              if (state is GreenhousesLoadedState) {
-                _showCreateGreenhouseDialog(context);
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BlocProvider.value(
-                      value: BlocProvider.of<GreenhouseBloc>(context),
-                      child: ZoneConfigurationScreen(
-                        zoneId: null,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => BlocProvider.value(
+                        value: BlocProvider.of<GreenhouseBloc>(context),
+                        child: const ZoneConfigurationScreen(
+                          zoneId: null,
+                          greenhouseId: null,
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }
+                ),
+              );
             },
-            child: Icon(
-              state is GreenhousesLoadedState ? Icons.add_home : Icons.add,
-            ),
+            child: Icon(Icons.add),
           ),
           body: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             child: switch (state) {
               GreenhouseInitialState() => const _WelcomeView(),
               GreenhouseLoadingState() => const _LoadingView(),
-              GreenhouseLoadedState(greenhouse: final greenhouse) =>
-                _ZonesListView(greenhouse: greenhouse),
               GreenhousesLoadedState(greenhouses: final greenhouses) =>
-                _GreenhousesListView(greenhouses: greenhouses),
-              GreenhouseErrorState(message: final message) =>
-                _ErrorView(message: message),
-              GreenhouseState() => throw UnimplementedError(),
+                _ZonesListView(
+                  zones:
+                      greenhouses.firstWhere((g) => g.id == greenhouseId).zones,
+                  greenhouseId: greenhouseId,
+                ),
+              GreenhouseErrorState(message: final message) => _ErrorView(
+                message: message,
+              ),
+              GreenhouseState() => const _LoadingView(),
             },
           ),
         );
@@ -146,54 +148,34 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _ZonesListView extends StatelessWidget {
-  final Greenhouse greenhouse;
-  const _ZonesListView({required this.greenhouse});
+  final List<CropZone> zones;
+  final int greenhouseId;
 
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      children: greenhouse.zones
-          .map(
-            (zone) => ZoneCard(
-              zone: zone,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => BlocProvider.value(
-                    value: BlocProvider.of<GreenhouseBloc>(context),
-                    child: ZoneConfigurationScreen(
-                      zoneId: zone.id,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _GreenhousesListView extends StatelessWidget {
-  final List<Greenhouse> greenhouses;
-  const _GreenhousesListView({required this.greenhouses});
+  const _ZonesListView({required this.zones, required this.greenhouseId});
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: greenhouses.length,
+      itemCount: zones.length,
       itemBuilder: (context, index) {
-        final greenhouse = greenhouses[index];
-        return Card(
-          child: ListTile(
-            title: Text(greenhouse.title),
-            subtitle: Text('${greenhouse.zones.length} zones'),
-            onTap: () {
-              context.read<GreenhouseBloc>().add(
-                LoadGreenhouseEvent(greenhouseId: greenhouse.id),
-              );
-            },
-          ),
+        final zone = zones[index];
+        return ZoneCard(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => BlocProvider.value(
+                      value: BlocProvider.of<GreenhouseBloc>(context),
+                      child: ZoneConfigurationScreen(
+                        zoneId: null,
+                        greenhouseId: greenhouseId,
+                      ),
+                    ),
+              ),
+            );
+          },
+          zone: zone,
         );
       },
     );

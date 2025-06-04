@@ -7,6 +7,18 @@ class Greenhouse {
 
   Greenhouse({required this.id, required this.title, this.zones = const []});
 
+  Greenhouse copyWith({
+    int? id,
+    String? title,
+    List<CropZone>? zones,
+  }) {
+    return Greenhouse(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      zones: zones ?? this.zones,
+    );
+  }
+
   toJson() {
     return '''
     {

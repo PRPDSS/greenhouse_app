@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:greenhouse_app/domain/pair.dart';
 
@@ -47,14 +48,12 @@ class Device {
   }
 
   String toJson() {
-    return '''
-    {
-      "id": $_id,
-      "type": "${_type.toString().split('.').last}",
-      "position": ${_position.toJson()},
-      "isActive": $_isActive
-    }
-    ''';
+    return jsonEncode({
+      'id': _id,
+      'type': _type.toString().split('.').last,
+      'position': jsonDecode(_position.toJson()),
+      'isActive': _isActive,
+    });
   }
 
   factory Device.fromJson(Map<String, dynamic> json) {

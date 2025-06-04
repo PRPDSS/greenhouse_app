@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:greenhouse_app/domain/climate_data.dart';
 import 'package:greenhouse_app/domain/pair.dart';
@@ -48,24 +49,29 @@ class Sensor {
   void removeListener(SensorListener listener) {
     _listeners.remove(listener);
   }
-  
+
   void _notifyListeners() {
     for (final listener in _listeners) {
-      listener.onSensorUpdated(ClimateData(sensorId: id, value: _value, type: _type, timestamp: DateTime.now()));
+      listener.onSensorUpdated(
+        ClimateData(
+          sensorId: id,
+          value: _value,
+          type: _type,
+          timestamp: DateTime.now(),
+        ),
+      );
     }
   }
 
   String toJson() {
-    return '''
-    {
-      "id": $_id,
-      "type": "${_type.toString().split('.').last}",
-      "position": ${_position.toJson()},
-      "value": $_value,
-      "criticalMin": $_criticalMin,
-      "criticalMax": $_criticalMax
-    }
-    ''';
+    return jsonEncode({
+      'id': _id,
+      'type': _type.toString().split('.').last,
+      'position': jsonDecode(_position.toJson()),
+      'value': _value,
+      'criticalMin': _criticalMin,
+      'criticalMax': _criticalMax,
+    });
   }
 
   factory Sensor.fromJson(Map<String, dynamic> json) {
@@ -89,8 +95,6 @@ class Sensor {
         return Colors.blue;
       case SensorType.acidity:
         return Colors.green;
-      default:
-        return Colors.grey;
     }
   }
 }

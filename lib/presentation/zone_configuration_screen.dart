@@ -15,12 +15,16 @@ import 'package:greenhouse_app/presentation/widgets/zone_size_selector.dart';
 
 class ZoneConfigurationScreen extends StatefulWidget {
   final int? zoneId;
+  final int? greenhouseId;
 
-  const ZoneConfigurationScreen({required this.zoneId, super.key});
+  const ZoneConfigurationScreen({
+    required this.zoneId,
+    required this.greenhouseId,
+    super.key,
+  });
 
   @override
-  State<ZoneConfigurationScreen> createState() =>
-      _ZoneConfigurationScreenState();
+  State<ZoneConfigurationScreen> createState() => _ZoneConfigurationScreenState();
 }
 
 class _ZoneConfigurationScreenState extends State<ZoneConfigurationScreen> {
@@ -34,7 +38,9 @@ class _ZoneConfigurationScreenState extends State<ZoneConfigurationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = BlocProvider.of<GreenhouseBloc>(context);
     return BlocBuilder<GreenhouseBloc, GreenhouseState>(
+      bloc: bloc,
       builder: (context, state) {
         if (state is GreenhouseLoadingState) {
           return Scaffold(
@@ -48,118 +54,136 @@ class _ZoneConfigurationScreenState extends State<ZoneConfigurationScreen> {
             body: Center(child: Text(state.message)),
           );
         }
-        if (state is GreenhouseLoadedState) {
+        if (state is GreenhousesLoadedState && widget.greenhouseId != null) {
+          final greenhouse = state.greenhouses.firstWhere(
+            (g) => g.id == widget.greenhouseId,
+            orElse: () => throw Exception('Greenhouse not found'),
+          );
+
           CropZone? zone;
           if (widget.zoneId != null) {
-            zone = state.greenhouse.zones.firstWhere(
+            zone = greenhouse.zones.firstWhere(
               (z) => z.id == widget.zoneId,
               orElse: () => throw Exception('Zone not found'),
             );
           }
 
           // Если zoneId == null, создаём временную зону для конфигурации
-          zoneDraft ??=
-              zone ??
+          zoneDraft ??= zone ??
               CropZone(
                 id: -1,
                 title: 'New Zone',
-                cropId:
-                    state.greenhouse.zones.isNotEmpty
-                        ? state.greenhouse.zones.first.cropId
-                        : null,
+                cropId: greenhouse.zones.isNotEmpty
+                    ? greenhouse.zones.first.cropId
+                    : null,
                 day: 30,
                 definitions: Pair(10.0, 10.0),
                 sensorManager: SensorManager(sensors: []),
                 deviceController: DeviceController(devices: []),
               );
+
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(zoneDraft!.title),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return const ZoneMarkersLegend();
+                      },
+                    );
+                  },
+                ),
+                if (widget.zoneId == null)
+                  IconButton(
+                    icon: const Icon(Icons.check),
+                    tooltip: 'Сохранить',
+                    onPressed: () {
+                      bloc.add(
+                        UpdateZoneEvent(
+                          greenhouseId: widget.greenhouseId!,
+                          zoneId: widget.zoneId ?? -1,
+                          zone: zoneDraft!,
+                        ),
+                      );
+                      Navigator.of(context).pop();
+                    },
+                  ),
+              ],
+            ),
+            body: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                ZoneScheme(
+                  sensorManager: zoneDraft!.sensorManager,
+                  deviceController: zoneDraft!.deviceController,
+                  definitions: zoneDraft!.definitions,
+                ),
+                const SizedBox(height: 16),
+                ZoneSizeSelector(
+                  definitions: zoneDraft!.definitions,
+                  onWidthChanged: (value) {
+                    final width = double.tryParse(value) ?? 10;
+                    setState(() {
+                      zoneDraft = zoneDraft!.copyWith(
+                        definitions: Pair(width, zoneDraft!.definitions.second),
+                      );
+                    });
+                    if (widget.zoneId != null) {
+                      context.read<GreenhouseBloc>().add(
+                        UpdateZoneEvent(
+                          greenhouseId: widget.greenhouseId!,
+                          zoneId: widget.zoneId!,
+                          zone: zoneDraft!,
+                        ),
+                      );
+                    }
+                  },
+                  onHeightChanged: (value) {
+                    final height = double.tryParse(value) ?? 10;
+                    setState(() {
+                      zoneDraft = zoneDraft!.copyWith(
+                        definitions: Pair(zoneDraft!.definitions.first, height),
+                      );
+                    });
+                    if (widget.zoneId != null) {
+                      context.read<GreenhouseBloc>().add(
+                        UpdateZoneEvent(
+                          greenhouseId: widget.greenhouseId!,
+                          zoneId: widget.zoneId!,
+                          zone: zoneDraft!,
+                        ),
+                      );
+                    }
+                  },
+                ),
+                SensorsList(
+                  sensors: zoneDraft!.sensorManager.sensors,
+                  onSensorUpdated: () {
+                    if (widget.zoneId != null) {
+                      context.read<GreenhouseBloc>().add(
+                        UpdateZoneEvent(
+                          greenhouseId: widget.greenhouseId!,
+                          zoneId: widget.zoneId!,
+                          zone: zoneDraft!,
+                        ),
+                      );
+                    }
+                    setState(() {});
+                  },
+                ),
+                DevicesList(devices: zoneDraft!.deviceController.devices),
+              ],
+            ),
+          );
         }
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text(zoneDraft!.title),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return const ZoneMarkersLegend();
-                    },
-                  );
-                },
-              ),
-              if (widget.zoneId == null)
-                IconButton(
-                  icon: const Icon(Icons.check),
-                  tooltip: 'Сохранить',
-                  onPressed: () {
-                    // TODO: добавить событие создания новой зоны
-                    // Например:
-                    // context.read<GreenhouseBloc>().add(AddZoneEvent(...));
-                    Navigator.of(context).pop();
-                  },
-                ),
-            ],
-          ),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              ZoneScheme(
-                sensorManager: zoneDraft!.sensorManager,
-                deviceController: zoneDraft!.deviceController,
-                definitions: zoneDraft!.definitions,
-              ),
-              const SizedBox(height: 16),
-              ZoneSizeSelector(
-                definitions: zoneDraft!.definitions,
-                onWidthChanged: (value) {
-                  final width = double.tryParse(value) ?? 10;
-                  setState(() {
-                    zoneDraft = zoneDraft!.copyWith(
-                      definitions: Pair(width, zoneDraft!.definitions.second),
-                    );
-                  });
-                  if (widget.zoneId != null) {
-                    context.read<GreenhouseBloc>().add(
-                      UpdateZoneDefinitionsEvent(
-                        zoneId: zoneDraft!.id,
-                        width: width,
-                        height: zoneDraft!.definitions.second,
-                      ),
-                    );
-                  }
-                },
-                onHeightChanged: (value) {
-                  final height = double.tryParse(value) ?? 10;
-                  setState(() {
-                    zoneDraft = zoneDraft!.copyWith(
-                      definitions: Pair(zoneDraft!.definitions.first, height),
-                    );
-                  });
-                  if (widget.zoneId != null) {
-                    context.read<GreenhouseBloc>().add(
-                      UpdateZoneDefinitionsEvent(
-                        zoneId: zoneDraft!.id,
-                        width: zoneDraft!.definitions.first,
-                        height: height,
-                      ),
-                    );
-                  }
-                },
-              ),
-              SensorsList(
-                sensors: zoneDraft!.sensorManager.sensors,
-                onSensorUpdated: () {
-                  if (widget.zoneId != null) {
-                    context.read<GreenhouseBloc>().add(const UpdateZoneEvent());
-                  }
-                  setState(() {});
-                },
-              ),
-              DevicesList(devices: zoneDraft!.deviceController.devices),
-            ],
-          ),
+          appBar: AppBar(title: const Text('Zone Configuration')),
+          body: const Center(child: Text('Invalid state')),
         );
       },
     );
