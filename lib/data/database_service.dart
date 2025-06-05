@@ -34,7 +34,7 @@ class DatabaseService {
 
     // Удаляем базу данных, если она уже существует
     if (await databaseExists(dbPath)) {
-      await deleteDatabase(dbPath);
+      // await deleteDatabase(dbPath);
     }
 
     return await openDatabase(

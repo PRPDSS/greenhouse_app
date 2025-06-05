@@ -19,20 +19,47 @@ class ZoneSizeSelector extends StatefulWidget {
 }
 
 class _ZoneSizeSelectorState extends State<ZoneSizeSelector> {
+  late TextEditingController widthFieldController;
+  late TextEditingController heightFieldController;
+
+  @override
+  void initState() {
+    super.initState();
+    widthFieldController = TextEditingController(
+      text: '${widget.definitions?.first.toDouble() ?? 10.0}',
+    );
+    heightFieldController = TextEditingController(
+      text: '${widget.definitions?.second.toDouble() ?? 10.0}',
+    );
+  }
+
+  @override
+  void didUpdateWidget(ZoneSizeSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.definitions?.first != widget.definitions?.first) {
+      widthFieldController.text = '${widget.definitions?.first.toDouble() ?? 10.0}';
+    }
+    if (oldWidget.definitions?.second != widget.definitions?.second) {
+      heightFieldController.text = '${widget.definitions?.second.toDouble() ?? 10.0}';
+    }
+  }
+
+  @override
+  void dispose() {
+    widthFieldController.dispose();
+    heightFieldController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width - 32;
     final textFieldWidth = width / 2 - 16;
-    final widthFieldController = TextEditingController(
-      text: '${widget.definitions?.first.toDouble() ?? 10.0}',
-    );
-    final heightFieldController = TextEditingController(
-      text: '${widget.definitions?.second.toDouble() ?? 10.0}',
-    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Select Zone Size'),
+        const Text('Select Zone Size'),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -46,11 +73,11 @@ class _ZoneSizeSelectorState extends State<ZoneSizeSelector> {
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                 ],
-                decoration: InputDecoration(label: Text('width')),
+                decoration: const InputDecoration(label: Text('width')),
                 onSubmitted: widget.onWidthChanged,
               ),
             ),
-            Text('x'),
+            const Text('x'),
             SizedBox(
               width: textFieldWidth,
               child: TextField(
@@ -61,7 +88,7 @@ class _ZoneSizeSelectorState extends State<ZoneSizeSelector> {
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                 ],
-                decoration: InputDecoration(label: Text('height')),
+                decoration: const InputDecoration(label: Text('height')),
                 onSubmitted: widget.onHeightChanged,
               ),
             ),

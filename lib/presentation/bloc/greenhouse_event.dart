@@ -13,21 +13,26 @@ class LoadGreenhousesEvent extends GreenhouseEvent {
   const LoadGreenhousesEvent();
 }
 
-class AddZoneEvent extends GreenhouseEvent {
-  final int greenhouseId;
-  final CropZone zone;
-
-  const AddZoneEvent({required this.greenhouseId, required this.zone});
+class DeleteGreenhouseEvent extends GreenhouseEvent {
+  final int id;
+  const DeleteGreenhouseEvent({required this.id});
 }
 
-class UpdateZoneEvent extends GreenhouseEvent {
+class SaveZoneEvent extends GreenhouseEvent {
   final int greenhouseId;
-  final int zoneId;
+  final int? zoneId;
   final CropZone zone;
 
-  const UpdateZoneEvent({
+  const SaveZoneEvent({
     required this.greenhouseId,
-    required this.zoneId,
+    this.zoneId,
     required this.zone,
   });
+}
+
+class DeleteZoneEvent extends GreenhouseEvent {
+  final int greenhouseId;
+  final int zoneId;
+
+  const DeleteZoneEvent({required this.greenhouseId, required this.zoneId});
 }

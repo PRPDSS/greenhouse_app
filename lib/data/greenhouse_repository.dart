@@ -41,6 +41,14 @@ class GreenhouseRepository {
     return greenhouse;
   }
 
+  Future<void> deleteGreenhouse(int id) async {
+    await _db.delete(
+      'greenhouse',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<void> saveGreenhouse(Greenhouse greenhouse) async {
     final zonesJson = jsonEncode(greenhouse.zones.map((z) => z.toMap()).toList());
     await _db.insert('greenhouse', {
@@ -78,5 +86,41 @@ class GreenhouseRepository {
       title: map['title'] as String,
       zones: zones,
     );
+  }
+
+  Future<CropZone> saveZone(int greenhouseId, CropZone zone) async {
+    final greenhouse = await loadGreenhouse(greenhouseId);
+    if (greenhouse == null) {
+      throw Exception('Greenhouse not found');
+    }
+
+    // Добавляем или обновляем зону в списке
+    final updatedZones = [...greenhouse.zones];
+    final existingIndex = updatedZones.indexWhere((z) => z.id == zone.id);
+    if (existingIndex != -1) {
+      updatedZones[existingIndex] = zone; // Обновляем существующую зону
+    } else {
+      final newId = DateTime.now().millisecondsSinceEpoch;
+      zone = zone.copyWith(id: newId); // Генерируем новый ID для новой зоны
+      updatedZones.add(zone); // Добавляем новую зону
+    }
+
+    // Сохраняем обновленную теплицу
+    await saveGreenhouse(greenhouse.copyWith(zones: updatedZones));
+
+    return zone; // Возвращаем сохраненную зону
+  }
+
+  Future<void> deleteZone(int greenhouseId, int zoneId) async {
+    final greenhouse = await loadGreenhouse(greenhouseId);
+    if (greenhouse == null) {
+      throw Exception('Greenhouse not found');
+    }
+
+    // Удаляем зону из списка
+    final updatedZones = greenhouse.zones.where((z) => z.id != zoneId).toList();
+
+    // Сохраняем обновленную теплицу
+    await saveGreenhouse(greenhouse.copyWith(zones: updatedZones));
   }
 }

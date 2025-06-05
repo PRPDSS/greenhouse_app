@@ -64,6 +64,7 @@ class CropZone {
     int? id,
     String? title,
     int? cropId,
+    /// сначала ширина потом высота
     Pair<double>? definitions,
     double? day,
     SensorManager? sensorManager,

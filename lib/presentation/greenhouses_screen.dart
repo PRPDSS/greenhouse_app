@@ -4,9 +4,9 @@ import 'package:greenhouse_app/domain/greenhouse.dart';
 import 'package:greenhouse_app/presentation/bloc/greenhouse_bloc.dart';
 import 'package:greenhouse_app/presentation/bloc/greenhouse_event.dart';
 import 'package:greenhouse_app/presentation/bloc/greenhouse_state.dart';
+import 'package:greenhouse_app/presentation/create_zone_screen.dart';
 import 'package:greenhouse_app/presentation/widgets/zone_card.dart';
 import 'package:greenhouse_app/presentation/zone_configuration_screen.dart';
-import 'package:greenhouse_app/presentation/zones_screen.dart';
 
 class GreenhousesScreen extends StatelessWidget {
   const GreenhousesScreen({super.key});
@@ -126,23 +126,48 @@ class _GreenhousesListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = BlocProvider.of<GreenhouseBloc>(context);
     return ListView.builder(
       itemCount: greenhouses.length,
       itemBuilder: (context, index) {
         final greenhouse = greenhouses[index];
-        return InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ZonesScreen(greenhouseId: greenhouse.id)),
-            );
-          },
+        // return InkWell(
+        // onTap: () {
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => ZonesScreen(greenhouseId: greenhouse.id)),
+        // );
+        // },
+        // child:
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
           child: Card(
-            // elevation: 0,
+            elevation: 0,
+            color: Theme.of(context).colorScheme.surfaceContainer,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 ListTile(
+                  trailing: PopupMenuButton(
+                    icon: Icon(Icons.more_vert),
+                    itemBuilder:
+                        (context) => [
+                          PopupMenuItem(
+                            value: 'edit',
+                            onTap: () {},
+                            child: Text('Rename'),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            onTap: () {
+                              bloc.add(
+                                DeleteGreenhouseEvent(id: greenhouse.id),
+                              );
+                            },
+                            child: Text('Delete'),
+                          ),
+                        ],
+                  ),
                   title: Text(greenhouse.title),
                   subtitle: Text('${greenhouse.zones.length} zones'),
                 ),
@@ -185,14 +210,17 @@ class _GreenhousesListView extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder:
-                              (context) => BlocProvider.value(
-                                value: BlocProvider.of<GreenhouseBloc>(context),
-                                child: ZoneConfigurationScreen(
-                                  zoneId: null,
-                                  greenhouseId: greenhouse.id,
-                                ),
+                          builder: (context) {
+                            final bloc = BlocProvider.of<GreenhouseBloc>(
+                              context,
+                            );
+                            return BlocProvider.value(
+                              value: bloc,
+                              child: CreateZoneScreen(
+                                greenhouseId: greenhouse.id,
                               ),
+                            );
+                          },
                         ),
                       );
                     },
@@ -201,6 +229,7 @@ class _GreenhousesListView extends StatelessWidget {
                 ),
               ],
             ),
+            // ),
           ),
         );
       },
